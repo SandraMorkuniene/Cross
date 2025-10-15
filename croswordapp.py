@@ -97,47 +97,47 @@ if st.button("✨ Generate Crossword"):
 
     # --- Crossword logic ---
     def find_crossing_positions(word, grid):
-    """
-    Find positions where `word` can cross existing letters in the grid.
-    Returns a list of tuples: (row, col, direction, index_in_word)
-    """
-    positions = []
-    n_rows, n_cols = grid.shape
-    for i in range(n_rows):
-        for j in range(n_cols):
-            for k, ch in enumerate(word):
-                # Check horizontal crossing
-                if j + k < n_cols and grid[i, j + k] == ch:
-                    positions.append((i, j, "H", k))
-                # Check vertical crossing
-                if i + k < n_rows and grid[i + k, j] == ch:
-                    positions.append((i, j, "V", k))
-    return positions
+        """
+        Find positions where `word` can cross existing letters in the grid.
+        Returns a list of tuples: (row, col, direction, index_in_word)
+        """
+        positions = []
+        n_rows, n_cols = grid.shape
+        for i in range(n_rows):
+            for j in range(n_cols):
+                for k, ch in enumerate(word):
+                    # Check horizontal crossing
+                    if j + k < n_cols and grid[i, j + k] == ch:
+                        positions.append((i, j, "H", k))
+                    # Check vertical crossing
+                    if i + k < n_rows and grid[i + k, j] == ch:
+                        positions.append((i, j, "V", k))
+        return positions
 
-def place_word_crossing(word, grid):
-    """
-    Try to place word crossing existing letters first. 
-    Returns True if placed, False otherwise.
-    """
-    positions = find_crossing_positions(word, grid)
-    random.shuffle(positions)
-    n_rows, n_cols = grid.shape
-    for x, y, direction, offset in positions:
-        if direction == "H":
-            start_y = y - offset
-            if start_y >= 0 and start_y + len(word) <= n_cols:
-                if all(grid[x, start_y + i] in [".", word[i]] for i in range(len(word))):
-                    for i, ch in enumerate(word):
-                        grid[x, start_y + i] = ch
-                    return True
-        elif direction == "V":
-            start_x = x - offset
-            if start_x >= 0 and start_x + len(word) <= n_rows:
-                if all(grid[start_x + i, y] in [".", word[i]] for i in range(len(word))):
-                    for i, ch in enumerate(word):
-                        grid[start_x + i, y] = ch
-                    return True
-    return False
+    def place_word_crossing(word, grid):
+        """
+        Try to place word crossing existing letters first. 
+        Returns True if placed, False otherwise.
+        """
+        positions = find_crossing_positions(word, grid)
+        random.shuffle(positions)
+        n_rows, n_cols = grid.shape
+        for x, y, direction, offset in positions:
+            if direction == "H":
+                start_y = y - offset
+                if start_y >= 0 and start_y + len(word) <= n_cols:
+                    if all(grid[x, start_y + i] in [".", word[i]] for i in range(len(word))):
+                        for i, ch in enumerate(word):
+                            grid[x, start_y + i] = ch
+                        return True
+            elif direction == "V":
+                start_x = x - offset
+                if start_x >= 0 and start_x + len(word) <= n_rows:
+                    if all(grid[start_x + i, y] in [".", word[i]] for i in range(len(word))):
+                        for i, ch in enumerate(word):
+                            grid[start_x + i, y] = ch
+                        return True
+        return False
 
     grid = np.full((grid_size, grid_size), ".", dtype=str)
 
@@ -224,6 +224,7 @@ def place_word_crossing(word, grid):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
 
 
