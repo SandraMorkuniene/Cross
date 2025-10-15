@@ -3,6 +3,7 @@ from openai import OpenAI
 import numpy as np
 import random
 import json
+import re
 from fpdf import FPDF
 
 # --- Initialize client ---
@@ -17,7 +18,7 @@ st.caption("Create fun, printable, multilingual crossword puzzles for your stude
 language = st.selectbox("🌍 Choose language", ["English", "Spanish", "French"])
 topic = st.text_input("🎨 Enter a topic", "Animals")
 age = st.slider("👶 Age group", 5, 10, 7)
-grid_size = st.selectbox("📏 Grid size", [8, 10, 12])
+grid_size = st.selectbox("📏 Grid size", [8, 10, 12,14,16,18,20])
 
 if st.button("✨ Generate Crossword"):
     with st.spinner("Asking AI for kid-friendly words and clues..."):
@@ -27,8 +28,9 @@ if st.button("✨ Generate Crossword"):
         Language: {language}.
         Theme: {topic}.
         Each word should be 3–8 letters long.
-        Return JSON with 'words' and 'clues' arrays.
-        Clues must be easy for kids learning to read.
+        Return ONLY valid JSON, with this exact structure:
+        {{"words": ["WORD1", "WORD2", ...], "clues": ["CLUE1", "CLUE2", ...]}}
+        Do not include any text outside the JSON.
         """
 
         response = client.chat.completions.create(
@@ -38,12 +40,22 @@ if st.button("✨ Generate Crossword"):
         )
 
         raw = response.choices[0].message.content.strip()
+        
+        match = re.search(r'\{.*\}', raw, re.DOTALL)
+        if match:
+            raw_json = match.group(0)
+        else:
+            st.error("⚠️ No JSON found in AI response.")
+            st.text(raw)
+            st.stop()
+    
         try:
-            data = json.loads(raw)
+            data = json.loads(raw_json)
             words = [w.upper() for w in data["words"]]
             clues = data["clues"]
         except Exception as e:
-            st.error("⚠️ Couldn't parse AI response. Try again.")
+            st.error("⚠️ Couldn't parse AI response as JSON.")
+            st.text(raw)
             st.stop()
 
     # --- Crossword logic ---
@@ -125,3 +137,4 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
