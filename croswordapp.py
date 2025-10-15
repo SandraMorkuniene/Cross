@@ -10,6 +10,7 @@ import random
 import json
 import re
 from fpdf import FPDF
+from io import BytesIO
 
 # --- Initialize OpenAI client ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -49,13 +50,13 @@ def draw_crossword(grid, show_letters=False):
     ax.axis("off")
     plt.tight_layout()
 
-    # Convert Matplotlib figure to PIL Image
-    canvas = FigureCanvas(fig)
-    canvas.draw()
-    img = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8)
-    img = img.reshape(canvas.get_width_height()[::-1] + (3,))
+    # Save figure to in-memory PNG and open as PIL Image
+    buf = BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
     plt.close(fig)
-    return Image.fromarray(img)
+    buf.seek(0)
+    img = Image.open(buf)
+    return img
 
 # --- Generate crossword ---
 if st.button("✨ Generate Crossword"):
@@ -165,5 +166,6 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
 
