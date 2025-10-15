@@ -52,8 +52,8 @@ def draw_crossword(grid, show_letters=False):
     # Convert Matplotlib figure to PIL Image
     canvas = FigureCanvas(fig)
     canvas.draw()
-    img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    img = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8)
+    img = img.reshape(canvas.get_width_height()[::-1] + (3,))
     plt.close(fig)
     return Image.fromarray(img)
 
@@ -165,4 +165,5 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
