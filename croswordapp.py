@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")  # Headless backend for Streamlit Cloud
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from PIL import Image
 import random
 import json
@@ -49,7 +50,8 @@ def draw_crossword(grid, show_letters=False):
     plt.tight_layout()
 
     # Convert Matplotlib figure to PIL Image
-    fig.canvas.draw()
+    canvas = FigureCanvas(fig)
+    canvas.draw()
     img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
     plt.close(fig)
@@ -163,3 +165,4 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
