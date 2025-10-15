@@ -96,6 +96,49 @@ if st.button("✨ Generate Crossword"):
             st.stop()
 
     # --- Crossword logic ---
+    def find_crossing_positions(word, grid):
+    """
+    Find positions where `word` can cross existing letters in the grid.
+    Returns a list of tuples: (row, col, direction, index_in_word)
+    """
+    positions = []
+    n_rows, n_cols = grid.shape
+    for i in range(n_rows):
+        for j in range(n_cols):
+            for k, ch in enumerate(word):
+                # Check horizontal crossing
+                if j + k < n_cols and grid[i, j + k] == ch:
+                    positions.append((i, j, "H", k))
+                # Check vertical crossing
+                if i + k < n_rows and grid[i + k, j] == ch:
+                    positions.append((i, j, "V", k))
+    return positions
+
+def place_word_crossing(word, grid):
+    """
+    Try to place word crossing existing letters first. 
+    Returns True if placed, False otherwise.
+    """
+    positions = find_crossing_positions(word, grid)
+    random.shuffle(positions)
+    n_rows, n_cols = grid.shape
+    for x, y, direction, offset in positions:
+        if direction == "H":
+            start_y = y - offset
+            if start_y >= 0 and start_y + len(word) <= n_cols:
+                if all(grid[x, start_y + i] in [".", word[i]] for i in range(len(word))):
+                    for i, ch in enumerate(word):
+                        grid[x, start_y + i] = ch
+                    return True
+        elif direction == "V":
+            start_x = x - offset
+            if start_x >= 0 and start_x + len(word) <= n_rows:
+                if all(grid[start_x + i, y] in [".", word[i]] for i in range(len(word))):
+                    for i, ch in enumerate(word):
+                        grid[start_x + i, y] = ch
+                    return True
+    return False
+
     grid = np.full((grid_size, grid_size), ".", dtype=str)
 
     def can_place(word, x, y, direction):
@@ -105,21 +148,36 @@ if st.button("✨ Generate Crossword"):
             return all(grid[x + i, y] in [".", ch] for i, ch in enumerate(word))
         return False
 
-    def place_word(word):
+    def place_word(word, grid):
+        """
+        Try to place word crossing letters if possible.
+        Fallback to random placement if no crossing position is available.
+        """
+        if place_word_crossing(word, grid):
+            return True  # placed crossing existing letters
+    
+        # fallback: random placement
+        n_rows, n_cols = grid.shape
         for _ in range(100):
             direction = random.choice(["H", "V"])
-            x = random.randint(0, grid_size - 1)
-            y = random.randint(0, grid_size - 1)
-            if can_place(word, x, y, direction):
-                for i, ch in enumerate(word):
-                    if direction == "H":
+            x = random.randint(0, n_rows - 1)
+            y = random.randint(0, n_cols - 1)
+            if direction == "H" and y + len(word) <= n_cols:
+                if all(grid[x, y + i] in [".", word[i]] for i in range(len(word))):
+                    for i, ch in enumerate(word):
                         grid[x, y + i] = ch
-                    else:
+                    return True
+            elif direction == "V" and x + len(word) <= n_rows:
+                if all(grid[x + i, y] in [".", word[i]] for i in range(len(word))):
+                    for i, ch in enumerate(word):
                         grid[x + i, y] = ch
-                return True
+                    return True
         return False
 
-    placed = [w for w in words if place_word(w)]
+    placed = []
+    for w in words:
+        if place_word(w, grid):
+            placed.append(w)
     if not placed:
         st.error("No words could be placed on the grid. Try again.")
         st.stop()
@@ -166,6 +224,7 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
 
 
