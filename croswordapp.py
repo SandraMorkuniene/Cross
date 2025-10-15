@@ -1,6 +1,8 @@
 import streamlit as st
 from openai import OpenAI
 import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
 import random
 import json
 import re
@@ -19,6 +21,48 @@ language = st.selectbox("🌍 Choose language", ["English", "Spanish", "French"]
 topic = st.text_input("🎨 Enter a topic", "Animals")
 age = st.slider("👶 Age group", 5, 10, 7)
 grid_size = st.selectbox("📏 Grid size", [8, 10, 12,14,16,18,20])
+
+def draw_crossword(grid, cell_size=1, show_letters=False):
+    """
+    Draw a crossword grid using Matplotlib.
+    
+    Args:
+        grid: 2D numpy array with letters or "_" for blanks
+        cell_size: size of each cell
+        show_letters: whether to show letters in the grid
+    Returns:
+        PIL Image of the crossword
+    """
+    n_rows, n_cols = grid.shape
+    fig, ax = plt.subplots(figsize=(n_cols, n_rows))
+    
+    # Draw grid lines
+    for x in range(n_cols + 1):
+        ax.plot([x, x], [0, n_rows], color="black", linewidth=2)
+    for y in range(n_rows + 1):
+        ax.plot([0, n_cols], [y, y], color="black", linewidth=2)
+    
+    # Fill letters
+    if show_letters:
+        for i in range(n_rows):
+            for j in range(n_cols):
+                if grid[i, j] != "_":
+                    ax.text(j + 0.5, n_rows - i - 0.5, grid[i, j],
+                            ha="center", va="center", fontsize=20)
+    
+    ax.set_xlim(0, n_cols)
+    ax.set_ylim(0, n_rows)
+    ax.axis("off")
+    plt.tight_layout()
+    
+    # Convert Matplotlib figure to PIL Image
+    fig.canvas.draw()
+    img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    plt.close(fig)
+    return Image.fromarray(img)
+
+
 
 if st.button("✨ Generate Crossword"):
     with st.spinner("Asking AI for kid-friendly words and clues..."):
@@ -93,6 +137,14 @@ if st.button("✨ Generate Crossword"):
     blank_grid = np.where(grid == ".", ".", "_")
 
     # --- Display ---
+
+    puzzle_img = draw_crossword(blank_grid, show_letters=False)
+    st.image(puzzle_img, caption="🧩 Crossword Puzzle", use_column_width=True)
+    
+    # For answer key
+    answer_img = draw_crossword(grid, show_letters=True)
+    st.image(answer_img, caption="✅ Answer Key", use_column_width=True)
+
     st.subheader("🧩 Crossword Grid")
     st.text("\n".join(" ".join(row) for row in blank_grid))
 
@@ -120,6 +172,32 @@ if st.button("✨ Generate Crossword"):
     for i, (w, c) in enumerate(zip(placed, clues), 1):
         pdf.multi_cell(0, 8, f"{i}. {c}")
 
+
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Convert PIL Image to file
+    puzzle_img_path = "puzzle.png"
+    puzzle_img.save(puzzle_img_path)
+    
+    # Insert image into PDF
+    pdf.image(puzzle_img_path, x=10, y=20, w=pdf.w - 20)
+    
+    # Add clues below image
+    pdf.set_font("DejaVu", "", 12)
+    pdf.ln(10)
+    for i, clue in enumerate(clues, 1):
+        pdf.multi_cell(0, 8, f"{i}. {clue}")
+    
+    # Answer key page
+    pdf.add_page()
+    answer_img_path = "answer.png"
+    answer_img.save(answer_img_path)
+    pdf.image(answer_img_path, x=10, y=20, w=pdf.w - 20)
+    
+    pdf.output("crossword_visual.pdf")
+
+
     # PAGE 2: Answer Key
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 18)
@@ -137,4 +215,5 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
