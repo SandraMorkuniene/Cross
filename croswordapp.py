@@ -232,7 +232,7 @@ if st.button("✨ Generate Crossword"):
 
     # Insert puzzle + clues
     pdf.image(puzzle_img_path, x=10, y=20, w=pdf.w - 20)
-    pdf.set_font(Arial", "", 12)
+    pdf.set_font("Arial", 12)
     pdf.ln(10)
     for i, c in enumerate(clues, 1):
         pdf.multi_cell(0, 8, f"{i}. {c}")
@@ -248,6 +248,7 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
 
 
