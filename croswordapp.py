@@ -62,13 +62,16 @@ def draw_crossword(grid, show_letters=False):
 if st.button("✨ Generate Crossword"):
     with st.spinner("Asking AI for kid-friendly words and clues..."):
         prompt = f"""
-        Generate {grid_size//2 + 2} simple words and clues for a crossword puzzle
-        for children aged {age}. 
-        Language: {language}.
-        Theme: {topic}.
-        Each word should be 3–8 letters long.
-        Return ONLY valid JSON, with this exact structure:
-        {{"words": ["WORD1", "WORD2", ...], "clues": ["CLUE1", "CLUE2", ...]}}
+        Generate {grid_size//2 + 2} words and clues for a crossword puzzle.
+        Rules:
+        - words must share letters with other words so they can cross
+        - length 3-8 letters
+        - simple vocabulary for children age {age}
+        - theme: {topic}
+        - language: {language}
+        
+        Return ONLY JSON:
+        {{"words": [...], "clues": [...]}}
         Do not include any text outside the JSON.
         """
         response = client.chat.completions.create(
@@ -248,6 +251,7 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
 
 
