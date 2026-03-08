@@ -97,48 +97,69 @@ if st.button("✨ Generate Crossword"):
 
     # --- Crossword logic ---
     def find_crossing_positions(word, grid):
-        """
-        Find positions where `word` can cross existing letters in the grid.
-        Returns a list of tuples: (row, col, direction, index_in_word)
-        """
         positions = []
         n_rows, n_cols = grid.shape
-        for i in range(n_rows):
-            for j in range(n_cols):
-                for k, ch in enumerate(word):
-                    # Check horizontal crossing
-                    if j + k < n_cols and grid[i, j + k] == ch:
-                        positions.append((i, j, "H", k))
-                    # Check vertical crossing
-                    if i + k < n_rows and grid[i + k, j] == ch:
-                        positions.append((i, j, "V", k))
-        return positions
+    
+        for r in range(n_rows):
+            for c in range(n_cols):
+                letter = grid[r, c]
+    
+                if letter == ".":
+                    continue
+    
+                for i, ch in enumerate(word):
+                    if ch == letter:
+                        # horizontal word crossing vertical
+                        positions.append((r, c, "H", i))
+                        # vertical word crossing horizontal
+                        positions.append((r, c, "V", i))
+
+    return positions
 
     def place_word_crossing(word, grid):
-        """
-        Try to place word crossing existing letters first. 
-        Returns True if placed, False otherwise.
-        """
         positions = find_crossing_positions(word, grid)
         random.shuffle(positions)
+    
         n_rows, n_cols = grid.shape
-        for x, y, direction, offset in positions:
+    
+        for r, c, direction, offset in positions:
+    
             if direction == "H":
-                start_y = y - offset
-                if start_y >= 0 and start_y + len(word) <= n_cols:
-                    if all(grid[x, start_y + i] in [".", word[i]] for i in range(len(word))):
-                        for i, ch in enumerate(word):
-                            grid[x, start_y + i] = ch
-                        return True
-            elif direction == "V":
-                start_x = x - offset
-                if start_x >= 0 and start_x + len(word) <= n_rows:
-                    if all(grid[start_x + i, y] in [".", word[i]] for i in range(len(word))):
-                        for i, ch in enumerate(word):
-                            grid[start_x + i, y] = ch
-                        return True
-        return False
+                start_c = c - offset
+                if start_c < 0 or start_c + len(word) > n_cols:
+                    continue
+    
+                ok = True
+                for i, ch in enumerate(word):
+                    cell = grid[r, start_c + i]
+                    if cell not in [".", ch]:
+                        ok = False
+                        break
+    
+                if ok:
+                    for i, ch in enumerate(word):
+                        grid[r, start_c + i] = ch
+                    return True
+    
+            if direction == "V":
+                start_r = r - offset
+                if start_r < 0 or start_r + len(word) > n_rows:
+                    continue
+    
+                ok = True
+                for i, ch in enumerate(word):
+                    cell = grid[start_r + i, c]
+                    if cell not in [".", ch]:
+                        ok = False
+                        break
+    
+                if ok:
+                    for i, ch in enumerate(word):
+                        grid[start_r + i, c] = ch
+                    return True
 
+        return False
+        
     grid = np.full((grid_size, grid_size), ".", dtype=str)
 
     def can_place(word, x, y, direction):
@@ -175,12 +196,15 @@ if st.button("✨ Generate Crossword"):
         return False
 
     placed = []
-    for w in words:
-        if place_word(w, grid):
-            placed.append(w)
-    if not placed:
-        st.error("No words could be placed on the grid. Try again.")
-        st.stop()
+    # place first word in center
+    first = words[0]
+    row = grid_size // 2
+    col = (grid_size - len(first)) // 2
+    
+    for i, ch in enumerate(first):
+        grid[row, col + i] = ch
+    
+    placed = [first]
 
     blank_grid = np.where(grid == ".", ".", "_")
 
@@ -224,6 +248,7 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
 
 
