@@ -114,7 +114,7 @@ if st.button("✨ Generate Crossword"):
                         # vertical word crossing horizontal
                         positions.append((r, c, "V", i))
 
-    return positions
+        return positions
 
     def place_word_crossing(word, grid):
         positions = find_crossing_positions(word, grid)
@@ -248,6 +248,7 @@ if st.button("✨ Generate Crossword"):
         st.download_button("📄 Download Printable PDF", f, file_name=pdf_name, mime="application/pdf")
 
     st.success("✅ Crossword with answer key generated successfully!")
+
 
 
 
